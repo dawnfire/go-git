@@ -10,6 +10,10 @@ type ReferenceStorage struct {
 	dir *dotgit.DotGit
 }
 
+func (r *ReferenceStorage) SetLog(ref *plumbing.Reference) error {
+	return r.dir.SetLog(ref, nil)
+}
+
 func (r *ReferenceStorage) SetReference(ref *plumbing.Reference) error {
 	return r.dir.SetRef(ref, nil)
 }
@@ -20,6 +24,10 @@ func (r *ReferenceStorage) CheckAndSetReference(ref, old *plumbing.Reference) er
 
 func (r *ReferenceStorage) Reference(n plumbing.ReferenceName) (*plumbing.Reference, error) {
 	return r.dir.Ref(n)
+}
+
+func (r *ReferenceStorage) RefLog(n plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error) {
+	return r.dir.RefLog(n, resolved)
 }
 
 func (r *ReferenceStorage) IterReferences() (storer.ReferenceIter, error) {

@@ -13,6 +13,8 @@ const (
 	refRemotePrefix = refPrefix + "remotes/"
 	refNotePrefix   = refPrefix + "notes/"
 	symrefPrefix    = "ref: "
+
+	logPrefix = "logs/"
 )
 
 // RefRevParseRules are a set of rules to parse references into short names.
@@ -24,6 +26,7 @@ var RefRevParseRules = []string{
 	"refs/heads/%s",
 	"refs/remotes/%s",
 	"refs/remotes/%s/HEAD",
+	"logs/%s",
 }
 
 var (
@@ -37,6 +40,8 @@ const (
 	InvalidReference  ReferenceType = 0
 	HashReference     ReferenceType = 1
 	SymbolicReference ReferenceType = 2
+
+	LogReference ReferenceType = 3
 )
 
 func (r ReferenceType) String() string {
@@ -47,6 +52,8 @@ func (r ReferenceType) String() string {
 		return "hash-reference"
 	case SymbolicReference:
 		return "symbolic-reference"
+	case LogReference:
+		return "log-reference"
 	}
 
 	return ""
@@ -85,6 +92,12 @@ func NewTagReferenceName(name string) ReferenceName {
 	return ReferenceName(refTagPrefix + name)
 }
 
+// NewLogReferenceName returns a reference name describing a tag based on short
+// his name.
+func NewLogReferenceName(name string) ReferenceName {
+	return ReferenceName(logPrefix + name)
+}
+
 // IsBranch check if a reference is a branch
 func (r ReferenceName) IsBranch() bool {
 	return strings.HasPrefix(string(r), refHeadPrefix)
@@ -93,6 +106,11 @@ func (r ReferenceName) IsBranch() bool {
 // IsNote check if a reference is a note
 func (r ReferenceName) IsNote() bool {
 	return strings.HasPrefix(string(r), refNotePrefix)
+}
+
+// IsLog check if a reference is a note
+func (r ReferenceName) IsLog() bool {
+	return strings.HasPrefix(string(r), logPrefix)
 }
 
 // IsRemote check if a reference is a remote
@@ -126,6 +144,7 @@ func (r ReferenceName) Short() string {
 const (
 	HEAD   ReferenceName = "HEAD"
 	Master ReferenceName = "refs/heads/master"
+	LOG    ReferenceName = "logs"
 )
 
 // Reference is a representation of git reference
@@ -147,6 +166,10 @@ func NewReferenceFromStrings(name, target string) *Reference {
 		return NewSymbolicReference(n, target)
 	}
 
+	if strings.HasPrefix(name, "logs/") {
+		return NewSymbolicReference(ReferenceName(name), ReferenceName(target))
+	}
+
 	return NewHashReference(n, NewHash(target))
 }
 
@@ -154,6 +177,15 @@ func NewReferenceFromStrings(name, target string) *Reference {
 func NewSymbolicReference(n, target ReferenceName) *Reference {
 	return &Reference{
 		t:      SymbolicReference,
+		n:      n,
+		target: target,
+	}
+}
+
+// NewLogReference creates a new LogReference reference
+func NewLogReference(n, target ReferenceName) *Reference {
+	return &Reference{
+		t:      LogReference,
 		n:      n,
 		target: target,
 	}
@@ -210,6 +242,8 @@ func (r *Reference) String() string {
 		ref = r.Hash().String()
 	case SymbolicReference:
 		ref = symrefPrefix + r.Target().String()
+	case LogReference:
+		ref = r.Target().String()
 	default:
 		return ""
 	}

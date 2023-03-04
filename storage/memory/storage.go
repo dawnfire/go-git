@@ -3,6 +3,7 @@ package memory
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-git/go-git/v5/config"
@@ -241,6 +242,23 @@ func (tx *TxObjectStorage) Rollback() error {
 
 type ReferenceStorage map[plumbing.ReferenceName]*plumbing.Reference
 
+func (r ReferenceStorage) SetLog(ref *plumbing.Reference) error {
+	if ref != nil {
+
+		d := r[ref.Name()]
+		if d == nil {
+			d = ref
+		} else {
+			v := string(ref.Target()) + "\n" + string(d.Target())
+			d = plumbing.NewLogReference(ref.Name(), plumbing.ReferenceName(v))
+		}
+
+		r[ref.Name()] = d
+	}
+
+	return nil
+}
+
 func (r ReferenceStorage) SetReference(ref *plumbing.Reference) error {
 	if ref != nil {
 		r[ref.Name()] = ref
@@ -270,6 +288,18 @@ func (r ReferenceStorage) Reference(n plumbing.ReferenceName) (*plumbing.Referen
 		return nil, plumbing.ErrReferenceNotFound
 	}
 
+	return ref, nil
+}
+
+func (r ReferenceStorage) RefLog(n plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error) {
+	ref, ok := r[n]
+	if !ok {
+		return nil, os.ErrNotExist
+	}
+
+	if resolved {
+		ref = plumbing.NewSymbolicReference(n, "true")
+	}
 	return ref, nil
 }
 

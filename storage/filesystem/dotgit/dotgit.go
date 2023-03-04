@@ -563,7 +563,8 @@ func (d *DotGit) objectPath(h plumbing.Hash) string {
 //
 // More on git hooks found here : https://git-scm.com/docs/githooks
 // More on 'quarantine'/incoming directory here:
-//     https://git-scm.com/docs/git-receive-pack
+//
+//	https://git-scm.com/docs/git-receive-pack
 func (d *DotGit) incomingObjectPath(h plumbing.Hash) string {
 	hString := h.String()
 
@@ -672,9 +673,27 @@ func (d *DotGit) checkReferenceAndTruncate(f billy.File, old *plumbing.Reference
 	return f.Truncate(0)
 }
 
+func (d *DotGit) SetLog(r, old *plumbing.Reference) error {
+	var content string
+	switch r.Type() {
+	case plumbing.LogReference:
+		content = r.Target().String()
+	case plumbing.SymbolicReference:
+		content = fmt.Sprintf("ref: %s\n", r.Target())
+	case plumbing.HashReference:
+		content = fmt.Sprintln(r.Hash().String())
+	}
+
+	fileName := r.Name().String()
+
+	return d.setLog(fileName, content, old)
+}
+
 func (d *DotGit) SetRef(r, old *plumbing.Reference) error {
 	var content string
 	switch r.Type() {
+	case plumbing.LogReference:
+		content = r.Target().String()
 	case plumbing.SymbolicReference:
 		content = fmt.Sprintf("ref: %s\n", r.Target())
 	case plumbing.HashReference:
@@ -714,6 +733,11 @@ func (d *DotGit) Ref(name plumbing.ReferenceName) (*plumbing.Reference, error) {
 	}
 
 	return d.packedRef(name)
+}
+
+// RefLog returns the reference for a given reference name.
+func (d *DotGit) RefLog(name plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error) {
+	return d.readRefLogFile(".", name.String(), resolved)
 }
 
 func (d *DotGit) findPackedRefsInFile(f billy.File) ([]*plumbing.Reference, error) {
@@ -995,6 +1019,30 @@ func (d *DotGit) readReferenceFile(path, name string) (ref *plumbing.Reference, 
 	}
 	if st.IsDir() {
 		return nil, ErrIsDir
+	}
+
+	f, err := d.fs.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer ioutil.CheckClose(f, &err)
+
+	return d.readReferenceFrom(f, name)
+}
+
+func (d *DotGit) readRefLogFile(path, name string, resolved bool) (ref *plumbing.Reference, err error) {
+	path = d.fs.Join(path, d.fs.Join(strings.Split(name, "/")...))
+	st, err := d.fs.Stat(path)
+	if err != nil {
+		return
+	}
+	if st.IsDir() {
+		return nil, ErrIsDir
+	}
+
+	if resolved {
+		ref = plumbing.NewSymbolicReference(plumbing.ReferenceName(name), "true")
+		return
 	}
 
 	f, err := d.fs.Open(path)

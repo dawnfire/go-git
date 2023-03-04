@@ -15,6 +15,8 @@ var ErrMaxResolveRecursion = errors.New("max. recursion level reached")
 
 // ReferenceStorer is a generic storage of references.
 type ReferenceStorer interface {
+	SetLog(*plumbing.Reference) error
+
 	SetReference(*plumbing.Reference) error
 	// CheckAndSetReference sets the reference `new`, but if `old` is
 	// not `nil`, it first checks that the current stored value for
@@ -22,7 +24,10 @@ type ReferenceStorer interface {
 	// not, it returns an error and doesn't update `new`.
 	CheckAndSetReference(new, old *plumbing.Reference) error
 	Reference(plumbing.ReferenceName) (*plumbing.Reference, error)
+	RefLog(refName plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error)
+
 	IterReferences() (ReferenceIter, error)
+
 	RemoveReference(plumbing.ReferenceName) error
 	CountLooseRefs() (int, error)
 	PackRefs() error

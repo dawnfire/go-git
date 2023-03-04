@@ -1402,6 +1402,16 @@ func (r *Repository) Reference(name plumbing.ReferenceName, resolved bool) (
 	return r.Storer.Reference(name)
 }
 
+// RefLog returns the refLog for a given reference name.
+//
+//	If param resolved is true, means to check whether the reference
+//	log is exists, return "true" as return Reference.Target means
+//	exists, else os.IsNotExist(err) is true.
+func (r *Repository) RefLog(name plumbing.ReferenceName, resolved bool) (
+	*plumbing.Reference, error) {
+	return r.Storer.RefLog(name, resolved)
+}
+
 // References returns an unsorted ReferenceIter for all references.
 func (r *Repository) References() (storer.ReferenceIter, error) {
 	return r.Storer.IterReferences()
@@ -1422,13 +1432,9 @@ func (r *Repository) Worktree() (*Worktree, error) {
 //
 // Implemented resolvers : HEAD, branch, tag, heads/branch, refs/heads/branch,
 // refs/tags/tag, refs/remotes/origin/branch, refs/remotes/origin/HEAD, tilde and caret (HEAD~1, master~^, tag~2, ref/heads/master~1, ...), selection by text (HEAD^{/fix nasty bug}), hash (prefix and full)
-func (r *Repository) ResolveRevision(in plumbing.Revision) (*plumbing.Hash, error) {
-	rev := in.String()
-	if rev == "" {
-		return &plumbing.ZeroHash, plumbing.ErrReferenceNotFound
-	}
+func (r *Repository) ResolveRevision(rev plumbing.Revision) (*plumbing.Hash, error) {
+	p := revision.NewParserFromString(string(rev))
 
-	p := revision.NewParserFromString(rev)
 	items, err := p.Parse()
 
 	if err != nil {
@@ -1557,10 +1563,6 @@ func (r *Repository) ResolveRevision(in plumbing.Revision) (*plumbing.Hash, erro
 
 			commit = c
 		}
-	}
-
-	if commit == nil {
-		return &plumbing.ZeroHash, plumbing.ErrReferenceNotFound
 	}
 
 	return &commit.Hash, nil
