@@ -33,7 +33,7 @@ MKEQruIQWJb+8HVXwssA4=
 			want: signatureTypeSSH,
 		},
 		{
-			name: "known signature format (X509)",
+			name: "known signature format (X509) CERTIFICATE",
 			b: []byte(`-----BEGIN CERTIFICATE-----
 MIIDZjCCAk6gAwIBAgIJALZ9Z3Z9Z3Z9MA0GCSqGSIb3DQEBCwUAMIGIMQswCQYD
 VQQGEwJTRTEOMAwGA1UECAwFVGV4YXMxDjAMBgNVBAcMBVRleGFzMQ4wDAYDVQQK
@@ -43,6 +43,19 @@ AlNFMQ4wDAYDVQQIDAVUZXhhczEOMAwGA1UEBwwFVGV4YXMxDjAMBgNVBAoMBVRl
 eGFzMQ4wDAYDVQQLDAVUZXhhczEYMBYGA1UEAwwPVGV4YXMgQ2VydGlmaWNhdGUw
 ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDQZ9Z3Z9Z3Z9Z3Z9Z3Z9Z3
 -----END CERTIFICATE-----`),
+			want: signatureTypeX509,
+		},
+		{
+			name: "known signature format (x509) SIGNED MESSAGE",
+			b: []byte(`-----BEGIN SIGNED MESSAGE-----
+MIIDZjCCAk6gAwIBAgIJALZ9Z3Z9Z3Z9MA0GCSqGSIb3DQEBCwUAMIGIMQswCQYD
+VQQGEwJTRTEOMAwGA1UECAwFVGV4YXMxDjAMBgNVBAcMBVRleGFzMQ4wDAYDVQQK
+DAVUZXhhczEOMAwGA1UECwwFVGV4YXMxGDAWBgNVBAMMD1RleGFzIENlcnRpZmlj
+YXRlMB4XDTE3MDUyNjE3MjY0MloXDTI3MDUyNDE3MjY0MlowgYgxCzAJBgNVBAYT
+AlNFMQ4wDAYDVQQIDAVUZXhhczEOMAwGA1UEBwwFVGV4YXMxDjAMBgNVBAoMBVRl
+eGFzMQ4wDAYDVQQLDAVUZXhhczEYMBYGA1UEAwwPVGV4YXMgQ2VydGlmaWNhdGUw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDQZ9Z3Z9Z3Z9Z3Z9Z3Z9Z3
+-----END SIGNED MESSAGE-----`),
 			want: signatureTypeX509,
 		},
 		{
@@ -177,4 +190,14 @@ signed tag`),
 			}
 		})
 	}
+}
+
+func FuzzParseSignedBytes(f *testing.F) {
+	f.Add([]byte(openPGPSignatureFormat[0]))
+	f.Add([]byte(x509SignatureFormat[0]))
+	f.Add([]byte(sshSignatureFormat[0]))
+
+	f.Fuzz(func(t *testing.T, input []byte) {
+		parseSignedBytes(input)
+	})
 }

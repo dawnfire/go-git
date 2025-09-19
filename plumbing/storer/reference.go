@@ -27,7 +27,6 @@ type ReferenceStorer interface {
 	RefLog(refName plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error)
 
 	IterReferences() (ReferenceIter, error)
-
 	RemoveReference(plumbing.ReferenceName) error
 	CountLooseRefs() (int, error)
 	PackRefs() error

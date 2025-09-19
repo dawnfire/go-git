@@ -2,6 +2,6 @@ coverage.out
 *~
 coverage.txt
 profile.out
-go_build_*
 .tmp/
-.DS_Store
+.git-dist/
+.vscode
