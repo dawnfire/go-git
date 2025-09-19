@@ -460,6 +460,11 @@ func PlainClone(path string, isBare bool, o *CloneOptions) (*Repository, error) 
 	return PlainCloneContext(context.Background(), path, isBare, o)
 }
 
+func (r *Repository) RefLog(name plumbing.ReferenceName, resolved bool) (
+	*plumbing.Reference, error) {
+	return r.Storer.RefLog(name, resolved)
+}
+
 // PlainCloneContext a repository into the path with the given options, isBare
 // defines if the new repository will be bare or normal. If the path is not empty
 // ErrRepositoryAlreadyExists is returned.
